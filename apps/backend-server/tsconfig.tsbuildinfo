@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/controllers/user.ts","./src/utils/prisma.ts"],"version":"5.8.2"}
+{"root":["./src/index.ts","./src/controllers/user.controllers.ts","./src/routes/user.router.ts","./src/utils/Apierror.ts","./src/utils/Apiresponse.ts"],"version":"5.8.2"}
