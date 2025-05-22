@@ -3,6 +3,7 @@ import { prisma } from "@repo/db";
 import { ApiError } from "../utils/Apierror";
 import { ApiResponse } from "../utils/Apiresponse";
 import { SendEmail } from "../utils/Resend";
+import bcrypt from "bcrypt";
 
 export async function SignUpController(req: Request, res: Response) {
   try {
@@ -149,3 +150,39 @@ export async function VerifyOtpController(req: Request, res: Response) {
     return res.status(500).json(new ApiError(500, "Internal server error"));
   }
 }
+
+export async function SignInController(req: Request, res: Response) {
+  try {
+    const { email, password }: { email: string; password: string } = req?.body;
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "Please enter email and password"));
+    }
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email,
+      },
+    });
+    if (!existingUser) {
+      return res.status(404).json(new ApiError(404, "User not found"));
+    }
+    if (!existingUser.password) {
+      return res.status(409).json(new ApiError(404, "User not verified"));
+    }
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      existingUser.password
+    );
+    if (!isPasswordCorrect) {
+      return res.status(401).json(new ApiError(401, "Invalid password"));
+    }
+    return res
+      .status(200)
+      .json(new ApiResponse(200, existingUser, "User signed in successfully"));
+  } catch (error) {
+    console.error("Error signing in user:", error);
+    return res.status(500).json(new ApiError(500, "Internal server error"));
+  }
+}
+
