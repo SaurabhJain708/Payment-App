@@ -127,9 +127,15 @@ exports.Prisma.UserScalarFieldEnum = {
   password: 'password',
   isVerified: 'isVerified',
   dob: 'dob',
-  phoneNumber: 'phoneNumber',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.OtpScalarFieldEnum = {
+  id: 'id',
+  identifier: 'identifier',
+  otp: 'otp',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -149,7 +155,8 @@ exports.Prisma.NullsOrder = {
 
 
 exports.Prisma.ModelName = {
-  User: 'User'
+  User: 'User',
+  Otp: 'Otp'
 };
 
 /**
