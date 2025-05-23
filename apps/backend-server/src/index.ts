@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 
 (async () => {
-  const client = await initRedis();
+ const client = await initRedis();
   app.use(
     session({
       store: new RedisStore({ client }),
