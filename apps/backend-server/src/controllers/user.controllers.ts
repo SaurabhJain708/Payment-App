@@ -186,3 +186,69 @@ export async function SignInController(req: Request, res: Response) {
   }
 }
 
+export async function CreatePasswordController(req: Request, res: Response) {
+  try {
+    const { email, password }: { email: string; password: string } = req?.body;
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "Please enter email and password"));
+    }
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email,
+      },
+    });
+    if (!existingUser) {
+      return res.status(404).json(new ApiError(404, "User not found"));
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const updatedUser = await prisma.user.update({
+      where: {
+        email,
+      },
+      data: {
+        password: hashedPassword,
+        isVerified: true,
+      },
+    });
+    if (!updatedUser) {
+      return res
+        .status(500)
+        .json(new ApiError(500, "Unable to create password, please try again"));
+    }
+    const { password: _, ...sanitizedUser } = updatedUser;
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, sanitizedUser, "Password created successfully")
+      );
+  } catch (error) {
+    console.error("Error creating password:", error);
+    return res.status(500).json(new ApiError(500, "Internal server error"));
+  }
+}
+
+export async function LogoutController(req: Request, res: Response) {
+  try {
+    const { email }: { email: string } = req?.body;
+    if (!email) {
+      return res.status(400).json(new ApiError(400, "Please enter email"));
+    }
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email,
+      },
+    });
+    if (!existingUser) {
+      return res.status(404).json(new ApiError(404, "User not found"));
+    }
+    
+    return res
+      .status(200)
+      .json(new ApiResponse(200, existingUser, "User logged out successfully"));
+  } catch (error) {
+    console.error("Error logging out user:", error);
+    return res.status(500).json(new ApiError(500, "Internal server error"));
+  }
+}
