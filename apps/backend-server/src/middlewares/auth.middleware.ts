@@ -36,6 +36,17 @@ export async function AuthMiddleware(
         .status(401)
         .json({ message: "Session expired or not found in Redis" });
     }
+    const session = JSON.parse(sessionData);
+    if (!session.isVerified) {
+      return res.status(409).json({ message: "User not verified" });
+    }
+    if (!session.email || !session.id) {
+      return res.status(401).json({ message: "Unauthorized: No email found" });
+    }
+    req.sessionData = {
+      userId: session.id as string,
+      email: session.email as string,
+    };
     next();
   } catch (error) {
     console.log(error);
