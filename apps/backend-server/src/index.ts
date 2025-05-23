@@ -10,13 +10,14 @@ dotenv.config();
 const app = express();
 
 (async () => {
- const client = await initRedis();
+  const client = await initRedis();
   app.use(
     session({
       store: new RedisStore({ client }),
       secret: "your_secret_key", // replace with a strong secret
       resave: false,
       saveUninitialized: false,
+      rolling: true, // 👈 This is the key
       cookie: {
         secure: false, // set true if using HTTPS
         httpOnly: true,
