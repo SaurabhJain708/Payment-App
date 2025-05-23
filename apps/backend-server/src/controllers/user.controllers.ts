@@ -177,6 +177,11 @@ export async function SignInController(req: Request, res: Response) {
     if (!isPasswordCorrect) {
       return res.status(401).json(new ApiError(401, "Invalid password"));
     }
+    req.session.user = {
+      id: existingUser.id,
+      email: existingUser.email,
+      isVerified: existingUser.isVerified,
+    };
     return res
       .status(200)
       .json(new ApiResponse(200, existingUser, "User signed in successfully"));
@@ -231,22 +236,15 @@ export async function CreatePasswordController(req: Request, res: Response) {
 
 export async function LogoutController(req: Request, res: Response) {
   try {
-    const { email }: { email: string } = req?.body;
-    if (!email) {
-      return res.status(400).json(new ApiError(400, "Please enter email"));
-    }
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        email,
-      },
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Error destroying session:", err);
+        return res.status(500).json({ message: "Failed to log out" });
+      }
+
+      res.clearCookie("connect.sid"); // ensure cookie is cleared from browser
+      return res.status(200).json({ message: "Logged out successfully" });
     });
-    if (!existingUser) {
-      return res.status(404).json(new ApiError(404, "User not found"));
-    }
-    
-    return res
-      .status(200)
-      .json(new ApiResponse(200, existingUser, "User logged out successfully"));
   } catch (error) {
     console.error("Error logging out user:", error);
     return res.status(500).json(new ApiError(500, "Internal server error"));

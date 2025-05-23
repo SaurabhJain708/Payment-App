@@ -15,15 +15,18 @@
     "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.18",
-    "@types/express": "^5.0.2"
+    "@types/express": "^5.0.2",
+    "@types/express-session": "^1.18.1"
   },
   "dependencies": {
     "@repo/db": "*",
     "bcrypt": "^6.0.0",
+    "connect-redis": "^8.1.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "express-session": "^1.18.1",
     "redis": "^5.0.1",
     "resend": "^4.5.1"
   }
