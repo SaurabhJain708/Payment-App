@@ -127,6 +127,7 @@ exports.Prisma.UserScalarFieldEnum = {
   password: 'password',
   isVerified: 'isVerified',
   detailComp: 'detailComp',
+  amount: 'amount',
   dob: 'dob',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -136,6 +137,14 @@ exports.Prisma.OtpScalarFieldEnum = {
   id: 'id',
   identifier: 'identifier',
   otp: 'otp',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.TransactionScalarFieldEnum = {
+  id: 'id',
+  amount: 'amount',
+  senderId: 'senderId',
+  receiverId: 'receiverId',
   createdAt: 'createdAt'
 };
 
@@ -157,7 +166,8 @@ exports.Prisma.NullsOrder = {
 
 exports.Prisma.ModelName = {
   User: 'User',
-  Otp: 'Otp'
+  Otp: 'Otp',
+  Transaction: 'Transaction'
 };
 
 /**
