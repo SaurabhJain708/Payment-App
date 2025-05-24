@@ -14,10 +14,10 @@ const app = express();
   app.use(
     session({
       store: new RedisStore({ client }),
-      secret: "your_secret_key", // replace with a strong secret
+      secret: process.env.SESSION_SECRET!,
       resave: false,
       saveUninitialized: false,
-      rolling: true, // 👈 This is the key
+      rolling: true,
       cookie: {
         secure: false, // set true if using HTTPS
         httpOnly: true,

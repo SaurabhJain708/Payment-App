@@ -8,7 +8,6 @@ export async function AuthMiddleware(
   res: Response,
   next: NextFunction
 ) {
-  const SESSION_SECRET = "your-session-secret"; // Same as used in express-session
 
   try {
     const token = req.cookies["connect.sid"];
@@ -21,7 +20,7 @@ export async function AuthMiddleware(
     const client = await initRedis();
     const unsignedToken = cookieSignature.unsign(
       token.slice(2),
-      SESSION_SECRET
+      process.env.SESSION_SECRET!
     );
 
     if (!unsignedToken) {
