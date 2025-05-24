@@ -206,6 +206,18 @@ export async function VerifyOtpController(req: Request, res: Response) {
       if (!deleteRedisOtp) {
         throw new Error("Unable to delete existing OTP from Redis");
       }
+      const updatedUser = await prismaTx.user.update({
+        where: {
+          email,
+        },
+        data: {
+          isVerified: true,
+          detailComp: false, // Assuming detail completion is set to false on verification
+        },
+      });
+      if (!updatedUser) {
+        throw new Error("Unable to update user verification status");
+      }
       return deleteOtp;
     });
     if (!transaction) {
@@ -213,6 +225,12 @@ export async function VerifyOtpController(req: Request, res: Response) {
         .status(500)
         .json(new ApiError(500, "Unable to verify OTP, please try again"));
     }
+    req.session.user = {
+      id: existingUser.id,
+      email: existingUser.email,
+      isVerified: existingUser.isVerified,
+      detailComplete: existingUser.detailComp,
+    };
     return res
       .status(200)
       .json(new ApiResponse(200, null, "OTP verified successfully"));
@@ -252,6 +270,7 @@ export async function SignInController(req: Request, res: Response) {
       id: existingUser.id,
       email: existingUser.email,
       isVerified: existingUser.isVerified,
+      detailComplete: existingUser.detailComp,
     };
     return res
       .status(200)
@@ -264,7 +283,13 @@ export async function SignInController(req: Request, res: Response) {
 
 export async function CreatePasswordController(req: Request, res: Response) {
   try {
-    const { email, password }: { email: string; password: string } = req?.body;
+    if (!req.sessionData?.isVerified) {
+      return res
+        .status(403)
+        .json(new ApiError(403, "User not verified, please verify first"));
+    }
+    const { password }: { email: string; password: string } = req?.body;
+    const email = req.sessionData?.email;
     if (!email || !password) {
       return res
         .status(400)
@@ -286,6 +311,7 @@ export async function CreatePasswordController(req: Request, res: Response) {
       data: {
         password: hashedPassword,
         isVerified: true,
+        detailComp: true,
       },
     });
     if (!updatedUser) {
@@ -293,6 +319,12 @@ export async function CreatePasswordController(req: Request, res: Response) {
         .status(500)
         .json(new ApiError(500, "Unable to create password, please try again"));
     }
+    req.session.user = {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      isVerified: updatedUser.isVerified,
+      detailComplete: updatedUser.detailComp,
+    };
     const { password: _, ...sanitizedUser } = updatedUser;
     return res
       .status(200)

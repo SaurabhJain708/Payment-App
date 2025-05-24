@@ -8,6 +8,8 @@ declare global {
       sessionData?: {
         userId: string;
         email: string;
+        detailComplete?: boolean;
+        isVerified?: boolean;
       };
     }
   }

@@ -46,6 +46,8 @@ export async function AuthMiddleware(
     req.sessionData = {
       userId: session.id as string,
       email: session.email as string,
+      detailComplete: session.detailComplete as boolean,
+      isVerified: session.isVerified as boolean,
     };
     next();
   } catch (error) {
