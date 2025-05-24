@@ -137,3 +137,34 @@ export const GetTransactionHistoryController = async (
     });
   }
 };
+
+export const GetSentTransactionsController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.sessionData?.userId;
+    const page = parseInt(req.query.page as string) || 0;
+    const transactions = await prisma.transaction.findMany({
+      where: { senderId: userId },
+      orderBy: { createdAt: "desc" },
+      skip: page * 10,
+      take: 10,
+    });
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          transactions,
+          "Sent transactions fetched successfully"
+        )
+      );
+  } catch (error) {
+    console.error("Error fetching sent transactions:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch sent transactions",
+    });
+  }
+};
