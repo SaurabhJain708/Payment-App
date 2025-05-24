@@ -387,3 +387,36 @@ export const LogoutController = async (
     res.status(500).json(new ApiError(500, "Internal server error"));
   }
 };
+
+export const GetUserController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.sessionData) {
+      res.status(401).json(new ApiError(401, "Unauthorized"));
+      return;
+    }
+    const user = await prisma.user.findUnique({
+      where: {
+        id: req.sessionData.userId,
+      },
+      select: {
+        id: true,
+        email: true,
+        isVerified: true,
+        detailComp: true,
+      },
+    });
+    if (!user) {
+      res.status(404).json(new ApiError(404, "User not found"));
+      return;
+    }
+    res
+      .status(200)
+      .json(new ApiResponse(200, user, "User retrieved successfully"));
+  } catch (error) {
+    console.error("Error retrieving user:", error);
+    res.status(500).json(new ApiError(500, "Internal server error"));
+  }
+};
