@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import userRouter from "./routes/user.router";
+import userRouter from "./routes/user.router.js";
 import dotenv from "dotenv";
 import { initRedis } from "./utils/redis";
 import session from "express-session";

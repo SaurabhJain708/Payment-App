@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { initRedis } from "../utils/redis";
-import { ApiError } from "../utils/Apierror";
+import { initRedis } from "../utils/redis.js";
+import { ApiError } from "../utils/Apierror.js";
 import cookieSignature from "cookie-signature";
 
 export async function AuthMiddleware(

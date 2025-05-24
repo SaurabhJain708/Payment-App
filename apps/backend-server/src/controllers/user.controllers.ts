@@ -1,16 +1,20 @@
 import { Request, Response } from "express";
 import { prisma } from "@repo/db";
-import { ApiError } from "../utils/Apierror";
-import { ApiResponse } from "../utils/Apiresponse";
-import { SendEmail } from "../utils/Resend";
+import { ApiError } from "../utils/Apierror.js";
+import { ApiResponse } from "../utils/Apiresponse.js";
+import { SendEmail } from "../utils/Resend.js";
 import bcrypt from "bcrypt";
-import { initRedis } from "../utils/redis";
+import { initRedis } from "../utils/redis.js";
 
-export async function SignUpController(req: Request, res: Response) {
+export const SignUpController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { email }: { email?: string } = req?.body;
     if (!email) {
-      return res.status(400).json(new ApiError(400, "Please enter email"));
+      res.status(400).json(new ApiError(400, "Please enter email"));
+      return;
     }
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -18,7 +22,8 @@ export async function SignUpController(req: Request, res: Response) {
       },
     });
     if (existingUser) {
-      return res.status(409).json(new ApiError(409, "User already exists"));
+      res.status(409).json(new ApiError(409, "User already exists"));
+      return;
     }
     const user = await prisma.user.create({
       data: {
@@ -26,24 +31,30 @@ export async function SignUpController(req: Request, res: Response) {
       },
     });
     if (!user) {
-      return res
+      res
         .status(500)
         .json(new ApiError(500, "Unable to create user, please try again"));
+
+      return;
     }
-    return res
+    res
       .status(201)
       .json(new ApiResponse(201, user, "User created successfully"));
   } catch (error) {
     console.error("Error creating user:", error);
-    return res.status(500).json(new ApiError(500, "Internal server error"));
+    res.status(500).json(new ApiError(500, "Internal server error"));
   }
-}
+};
 
-export async function SendOtpController(req: Request, res: Response) {
+export const SendOtpController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { email }: { email: string } = req?.body;
     if (!email) {
-      return res.status(400).json(new ApiError(400, "Please enter email"));
+      res.status(400).json(new ApiError(400, "Please enter email"));
+      return;
     }
     const client = await initRedis();
     const existingUser = await prisma.user.findFirst({
@@ -52,7 +63,8 @@ export async function SendOtpController(req: Request, res: Response) {
       },
     });
     if (!existingUser) {
-      return res.status(404).json(new ApiError(404, "User not found"));
+      res.status(404).json(new ApiError(404, "User not found"));
+      return;
     }
     const existingOtp = await prisma.otp.findFirst({
       where: {
@@ -88,17 +100,19 @@ export async function SendOtpController(req: Request, res: Response) {
         return { newOtp, otp };
       });
       if (!transaction.newOtp || !transaction.otp) {
-        return res
+        res
           .status(500)
           .json(new ApiError(500, "Unable to create OTP, please try again"));
+        return;
       }
       // Send email with OTP
       const { otp } = transaction;
       const emailSent = await SendEmail(otp, email);
       if (!emailSent) {
-        return res
+        res
           .status(500)
           .json(new ApiError(500, "Unable to send OTP, please try again"));
+        return;
       }
       const expiresAt = Date.now() + 6 * 60 * 1000;
       const otpData = {
@@ -111,13 +125,11 @@ export async function SendOtpController(req: Request, res: Response) {
         NX: true,
       });
       if (!redisSet) {
-        return res
-          .status(500)
-          .json(new ApiError(500, "Unable to set OTP in Redis"));
+        res.status(500).json(new ApiError(500, "Unable to set OTP in Redis"));
+        return;
       }
-      return res
-        .status(200)
-        .json(new ApiResponse(200, null, "OTP sent successfully"));
+      res.status(200).json(new ApiResponse(200, null, "OTP sent successfully"));
+      return;
     }
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedOtp = await bcrypt.hash(otp, 10);
@@ -128,16 +140,18 @@ export async function SendOtpController(req: Request, res: Response) {
       },
     });
     if (!newOtp) {
-      return res
+      res
         .status(500)
         .json(new ApiError(500, "Unable to create OTP, please try again"));
+      return;
     }
     // Send email with OTP
     const emailSent = await SendEmail(otp, email);
     if (!emailSent) {
-      return res
+      res
         .status(500)
         .json(new ApiError(500, "Unable to send OTP, please try again"));
+      return;
     }
     const expiresAt = Date.now() + 5 * 60 * 1000;
     const otpData = {
@@ -150,26 +164,25 @@ export async function SendOtpController(req: Request, res: Response) {
       NX: true,
     });
     if (!redisSet) {
-      return res
-        .status(500)
-        .json(new ApiError(500, "Unable to set OTP in Redis"));
+      res.status(500).json(new ApiError(500, "Unable to set OTP in Redis"));
+      return;
     }
-    return res
-      .status(200)
-      .json(new ApiResponse(200, null, "OTP sent successfully"));
+    res.status(200).json(new ApiResponse(200, null, "OTP sent successfully"));
   } catch (error) {
     console.error("Error sending OTP:", error);
-    return res.status(500).json(new ApiError(500, "Internal server error"));
+    res.status(500).json(new ApiError(500, "Internal server error"));
   }
-}
+};
 
-export async function VerifyOtpController(req: Request, res: Response) {
+export const VerifyOtpController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { email, otp }: { email: string; otp: string } = req?.body;
     if (!email || !otp) {
-      return res
-        .status(400)
-        .json(new ApiError(400, "Please enter email and OTP"));
+      res.status(400).json(new ApiError(400, "Please enter email and OTP"));
+      return;
     }
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -177,7 +190,8 @@ export async function VerifyOtpController(req: Request, res: Response) {
       },
     });
     if (!existingUser) {
-      return res.status(404).json(new ApiError(404, "User not found"));
+      res.status(404).json(new ApiError(404, "User not found"));
+      return;
     }
     const existingOtp = await prisma.otp.findFirst({
       where: {
@@ -186,11 +200,13 @@ export async function VerifyOtpController(req: Request, res: Response) {
     });
 
     if (!existingOtp) {
-      return res.status(404).json(new ApiError(404, "Invalid OTP"));
+      res.status(404).json(new ApiError(404, "Invalid OTP"));
+      return;
     }
     const isOtpCorrect = await bcrypt.compare(otp, existingOtp.otp);
     if (!isOtpCorrect) {
-      return res.status(401).json(new ApiError(401, "Invalid OTP"));
+      res.status(401).json(new ApiError(401, "Invalid OTP"));
+      return;
     }
     const transaction = await prisma.$transaction(async (prismaTx) => {
       const deleteOtp = await prismaTx.otp.delete({
@@ -221,9 +237,10 @@ export async function VerifyOtpController(req: Request, res: Response) {
       return deleteOtp;
     });
     if (!transaction) {
-      return res
+      res
         .status(500)
         .json(new ApiError(500, "Unable to verify OTP, please try again"));
+      return;
     }
     req.session.user = {
       id: existingUser.id,
@@ -231,22 +248,26 @@ export async function VerifyOtpController(req: Request, res: Response) {
       isVerified: existingUser.isVerified,
       detailComplete: existingUser.detailComp,
     };
-    return res
+    res
       .status(200)
       .json(new ApiResponse(200, null, "OTP verified successfully"));
   } catch (error) {
     console.error("Error verifying OTP:", error);
-    return res.status(500).json(new ApiError(500, "Internal server error"));
+    res.status(500).json(new ApiError(500, "Internal server error"));
   }
-}
+};
 
-export async function SignInController(req: Request, res: Response) {
+export const SignInController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { email, password }: { email: string; password: string } = req?.body;
     if (!email || !password) {
-      return res
+      res
         .status(400)
         .json(new ApiError(400, "Please enter email and password"));
+      return;
     }
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -254,17 +275,20 @@ export async function SignInController(req: Request, res: Response) {
       },
     });
     if (!existingUser) {
-      return res.status(404).json(new ApiError(404, "User not found"));
+      res.status(404).json(new ApiError(404, "User not found"));
+      return;
     }
     if (!existingUser.password) {
-      return res.status(409).json(new ApiError(404, "User not verified"));
+      res.status(409).json(new ApiError(404, "User not verified"));
+      return;
     }
     const isPasswordCorrect = await bcrypt.compare(
       password,
       existingUser.password
     );
     if (!isPasswordCorrect) {
-      return res.status(401).json(new ApiError(401, "Invalid password"));
+      res.status(401).json(new ApiError(401, "Invalid password"));
+      return;
     }
     req.session.user = {
       id: existingUser.id,
@@ -272,28 +296,33 @@ export async function SignInController(req: Request, res: Response) {
       isVerified: existingUser.isVerified,
       detailComplete: existingUser.detailComp,
     };
-    return res
+    res
       .status(200)
       .json(new ApiResponse(200, existingUser, "User signed in successfully"));
   } catch (error) {
     console.error("Error signing in user:", error);
-    return res.status(500).json(new ApiError(500, "Internal server error"));
+    res.status(500).json(new ApiError(500, "Internal server error"));
   }
-}
+};
 
-export async function CreatePasswordController(req: Request, res: Response) {
+export const CreatePasswordController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     if (!req.sessionData?.isVerified) {
-      return res
+      res
         .status(403)
         .json(new ApiError(403, "User not verified, please verify first"));
+      return;
     }
     const { password }: { email: string; password: string } = req?.body;
     const email = req.sessionData?.email;
     if (!email || !password) {
-      return res
+      res
         .status(400)
         .json(new ApiError(400, "Please enter email and password"));
+      return;
     }
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -301,7 +330,8 @@ export async function CreatePasswordController(req: Request, res: Response) {
       },
     });
     if (!existingUser) {
-      return res.status(404).json(new ApiError(404, "User not found"));
+      res.status(404).json(new ApiError(404, "User not found"));
+      return;
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const updatedUser = await prisma.user.update({
@@ -315,9 +345,10 @@ export async function CreatePasswordController(req: Request, res: Response) {
       },
     });
     if (!updatedUser) {
-      return res
+      res
         .status(500)
         .json(new ApiError(500, "Unable to create password, please try again"));
+      return;
     }
     req.session.user = {
       id: updatedUser.id,
@@ -326,18 +357,21 @@ export async function CreatePasswordController(req: Request, res: Response) {
       detailComplete: updatedUser.detailComp,
     };
     const { password: _, ...sanitizedUser } = updatedUser;
-    return res
+    res
       .status(200)
       .json(
         new ApiResponse(200, sanitizedUser, "Password created successfully")
       );
   } catch (error) {
     console.error("Error creating password:", error);
-    return res.status(500).json(new ApiError(500, "Internal server error"));
+    res.status(500).json(new ApiError(500, "Internal server error"));
   }
-}
+};
 
-export async function LogoutController(req: Request, res: Response) {
+export const LogoutController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     req.session.destroy((err) => {
       if (err) {
@@ -350,6 +384,6 @@ export async function LogoutController(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Error logging out user:", error);
-    return res.status(500).json(new ApiError(500, "Internal server error"));
+    res.status(500).json(new ApiError(500, "Internal server error"));
   }
-}
+};
